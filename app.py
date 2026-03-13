@@ -386,6 +386,7 @@ def init_session():
         "doc_info": None,
         "api_key_set": False,
         "processing": False,
+        "pending_suggestion": None,   # ← stores button click across rerun
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -656,50 +657,52 @@ elif not st.session_state.doc_info:
     </div>
     """, unsafe_allow_html=True)
 else:
-    # Suggestion chips
+    # ── Suggestion chips (fixed with session_state) ──────────────────────
     st.markdown("""
     <div style="margin-bottom:10px; font-size:0.78rem; color:#475569;">
-        Try asking:
+        💬 Try a quick question:
     </div>
     """, unsafe_allow_html=True)
 
     chips_col1, chips_col2, chips_col3, chips_col4 = st.columns(4)
-    suggestion = None
 
     with chips_col1:
         if st.button("📌 List all questions", use_container_width=True):
-            suggestion = "List all the questions present in this document"
+            st.session_state.pending_suggestion = "List all the questions present in this document"
+            st.rerun()
     with chips_col2:
-        if st.button("💡 Explain a concept", use_container_width=True):
-            suggestion = "Explain the key concepts in this document with simple analogies"
+        if st.button("💡 Explain concepts", use_container_width=True):
+            st.session_state.pending_suggestion = "Explain the key concepts in this document with simple analogies"
+            st.rerun()
     with chips_col3:
         if st.button("🧠 Give me tricks", use_container_width=True):
-            suggestion = "What are some memory tricks and shortcuts for the important topics in this paper?"
+            st.session_state.pending_suggestion = "What are memory tricks and shortcuts for the important topics in this paper?"
+            st.rerun()
     with chips_col4:
         if st.button("⚠️ Important topics", use_container_width=True):
-            suggestion = "What are the most important and frequently asked topics? This is very important for my exam"
+            st.session_state.pending_suggestion = "What are the most important and frequently asked topics? This is very important for my exam"
+            st.rerun()
 
-    # Chat input
-    user_input = st.chat_input(
-        "Ask a question, request an explanation, or say 'explain [topic] — this is very important'..."
-    )
+    # ── Chat input ───────────────────────────────────────────────────────
+    user_input = st.chat_input("Ask me anything about your document... e.g. 'explain question 3' or 'give me a trick for this topic'")
 
-    # Use suggestion if clicked
-    if suggestion:
-        user_input = suggestion
+    # Pick up either typed input or button suggestion
+    final_input = user_input or st.session_state.get("pending_suggestion")
 
-    if user_input and user_input.strip():
-        with st.spinner("⚡ Searching your document and crafting answer..."):
+    if final_input and final_input.strip():
+        # Clear the pending suggestion immediately
+        st.session_state.pending_suggestion = None
+
+        with st.spinner("⚡ Thinking..."):
             result = st.session_state.pipeline.query(
-                user_query=user_input.strip(),
+                user_query=final_input.strip(),
                 chat_history=st.session_state.chat_history,
                 top_k=5
             )
 
-        # Store in history
         st.session_state.chat_history.append({
             "role": "user",
-            "content": user_input.strip(),
+            "content": final_input.strip(),
             "importance": result["importance"]
         })
         st.session_state.chat_history.append({

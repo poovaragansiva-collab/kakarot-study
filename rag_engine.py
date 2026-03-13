@@ -228,7 +228,7 @@ class RAGPipeline:
     def __init__(self, api_key: str):
         self.retriever   = TFIDFRetriever()
         self.llm         = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",
+            model="gemini-2.0-flash",
             google_api_key=api_key,
             temperature=0.3,
             max_output_tokens=2048,
