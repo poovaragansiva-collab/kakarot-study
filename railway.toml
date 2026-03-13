@@ -1,0 +1,14 @@
+# Railway deployment configuration
+# https://railway.app
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+# Environment variables to set in Railway dashboard:
+# GOOGLE_API_KEY = sk-ant-api...  (your key — users won't need their own)
